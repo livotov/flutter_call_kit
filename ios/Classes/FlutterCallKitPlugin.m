@@ -8,6 +8,7 @@ static int const OUTGOING_CALL_WAKEUP_DELAY = 10;
 static int const OUTGOING_CALL_WAKEUP_DELAY = 5;
 #endif
 
+static NSString *const kShouldContinueUserActionOutgoingCall = @"reportContinueUserActivityCall";
 static NSString *const kHandleStartCallNotification = @"handleStartCallNotification";
 static NSString *const kDidReceiveStartCallAction = @"didReceiveStartCallAction";
 static NSString *const kPerformAnswerCallAction = @"performAnswerCallAction";
@@ -39,10 +40,11 @@ static FlutterError *getFlutterError(NSError *error) {
 }
 
 static CXProvider* sharedProvider;
+static FlutterCallKitPlugin* sharedPluginInstance;
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-    FlutterCallKitPlugin* instance = [[FlutterCallKitPlugin alloc] initWithRegistrar:registrar messenger:[registrar messenger]];
-    [registrar addApplicationDelegate:instance];
+    sharedPluginInstance = [[FlutterCallKitPlugin alloc] initWithRegistrar:registrar messenger:[registrar messenger]];
+    [registrar addApplicationDelegate:sharedPluginInstance];
 }
 
 - (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar
@@ -387,7 +389,7 @@ static CXProvider* sharedProvider;
     providerConfiguration.supportsVideo = YES;
     providerConfiguration.maximumCallGroups = 3;
     providerConfiguration.maximumCallsPerCallGroup = 1;
-    providerConfiguration.supportedHandleTypes = [NSSet setWithObjects:[NSNumber numberWithInteger:CXHandleTypePhoneNumber], nil];
+    providerConfiguration.supportedHandleTypes = [NSSet setWithObjects:[NSNumber numberWithInteger:CXHandleTypeEmailAddress], nil];
     if (settings[@"supportsVideo"]) {
         providerConfiguration.supportsVideo = [settings[@"supportsVideo"] boolValue];
     }
@@ -484,6 +486,12 @@ continueUserActivity:(NSUserActivity *)userActivity
         return YES;
     }
     return NO;
+}
+
++ (void)reportContinueUserActivityCall:(NSString *)handle
+                              hasVideo:(BOOL)hasVideo
+{
+    [sharedPluginInstance->_channel invokeMethod:kShouldContinueUserActionOutgoingCall arguments:@{ @"handle": handle, @"hasVideo": @(hasVideo) }];
 }
 
 + (void)reportNewIncomingCall:(NSString *)uuidString

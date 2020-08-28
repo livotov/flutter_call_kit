@@ -12,6 +12,12 @@ import 'package:flutter/widgets.dart';
 /// [handle] - Phone number of the callee see [HandleType] for other options
 typedef Future<dynamic> OnReceiveStartCallAction(String uuid, String handle);
 
+/// User tapped on recent call in system phone app
+///
+/// [handle]- Phone number to call
+/// [hasVideo]- Should this call be a video call
+typedef Future<dynamic> OnContinueUserActivityCallAction(String handle, bool hasVideo);
+
 /// User answer the incoming call
 ///
 /// [uuid]- The UUID of the call that is to be answered.
@@ -123,6 +129,8 @@ class FlutterCallKit {
   /// probably respond by hanging up all calls.
   VoidCallback _onProviderReset;
 
+  OnContinueUserActivityCallAction _reportContinueUserActivityCall;
+
   OnAnswerCallAction _performAnswerCallAction;
 
   OnEndCallAction _performEndCallAction;
@@ -142,6 +150,7 @@ class FlutterCallKit {
   /// Configures with [options] and sets up handlers for incoming messages.
   void configure(
     IOSOptions options, {
+    OnContinueUserActivityCallAction onContinueUserActivityCallAction,
     OnReceiveStartCallAction didReceiveStartCallAction,
     VoidCallback onProviderReset,
     OnAnswerCallAction performAnswerCallAction,
@@ -157,6 +166,7 @@ class FlutterCallKit {
     if (!Platform.isIOS) {
       return;
     }
+    _reportContinueUserActivityCall = onContinueUserActivityCallAction;
     _didReceiveStartCallAction = didReceiveStartCallAction;
     _onProviderReset = onProviderReset;
     _performAnswerCallAction = performAnswerCallAction;
@@ -174,6 +184,9 @@ class FlutterCallKit {
 
   Future<dynamic> _handleMethod(MethodCall call) async {
     switch (call.method) {
+      case "reportContinueUserActivityCall":
+        _reportContinueUserActivityCall(call.arguments.cast<String, dynamic>()["handle"], call.arguments.cast<bool, dynamic>()["hasVideo"]);
+            return null;
       case "didReceiveStartCallAction":
         if (_didReceiveStartCallAction == null) {
           return null;

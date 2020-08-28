@@ -13,4 +13,7 @@
                      hasVideo:(BOOL)hasVideo
           localizedCallerName:(NSString * _Nullable)localizedCallerName
                   fromPushKit:(BOOL)fromPushKit;
+
++ (void)reportContinueUserActivityCall:(NSString *)handle
+                              hasVideo:(BOOL)hasVideo;
 @end
